@@ -34,8 +34,12 @@ func main() {
 		AppName:      "interseguro-go-api",
 		ErrorHandler: middleware.ErrorHandler(),
 	})
+	corsOrigins := os.Getenv("CORS_ALLOW_ORIGINS")
+	if corsOrigins == "" {
+		corsOrigins = "*"
+	}
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
+		AllowOrigins: corsOrigins,
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 	}))

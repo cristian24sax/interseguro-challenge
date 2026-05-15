@@ -11,6 +11,8 @@ const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '1h';
 const authUsername = process.env.AUTH_USERNAME || 'demo';
 const authPassword = process.env.AUTH_PASSWORD || 'interseguro';
 const authPasswordHash = bcrypt.hashSync(authPassword, 10);
+const goApiUrl = (process.env.GO_API_URL || '').trim().replace(/\/$/, '');
+const goApiTimeoutMs = parseInt(process.env.GO_API_TIMEOUT_MS || '60000', 10);
 
 module.exports = {
   port,
@@ -18,4 +20,6 @@ module.exports = {
   jwtExpiresIn,
   authUsername,
   authPasswordHash,
+  goApiUrl,
+  goApiTimeoutMs,
 };

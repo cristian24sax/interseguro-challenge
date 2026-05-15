@@ -6,11 +6,28 @@
   const config = (function resolveConfig() {
     const meta = document.querySelector('meta[name="go-api-url"]');
     const fromMeta = meta?.getAttribute('content')?.trim();
+    const fromRuntime = window.__INTERSEGURO_CONFIG__?.goApiUrl?.trim();
     const fromQuery = new URLSearchParams(window.location.search).get('api');
-    const baseUrl = (fromQuery || fromMeta || 'http://localhost:8080').replace(/\/$/, '');
+    const directGoUrl = (fromQuery || fromRuntime || fromMeta || '').replace(/\/$/, '');
+
+    // Same-origin proxy: evita CORS y que el Bearer no llegue a Go en Render.
+    const useProxy =
+      !directGoUrl ||
+      (() => {
+        try {
+          return new URL(directGoUrl).origin !== window.location.origin;
+        } catch {
+          return true;
+        }
+      })();
+
+    const baseUrl = useProxy ? window.location.origin : directGoUrl;
+
     return {
       goApiBaseUrl: baseUrl,
       qrPath: '/api/v1/qr-factorization',
+      displayGoUrl: directGoUrl || baseUrl,
+      useProxy,
     };
   })();
 
@@ -30,7 +47,9 @@
     btnLogout: document.getElementById('btn-logout'),
   };
 
-  els.apiUrlLabel.textContent = config.goApiBaseUrl;
+  els.apiUrlLabel.textContent = config.useProxy
+    ? `${config.displayGoUrl || 'Go API'} (vía proxy Node)`
+    : config.goApiBaseUrl;
   els.userLabel.textContent = InterseguroAuth.getUsername() || 'Usuario';
   els.btnLogout.addEventListener('click', () => InterseguroAuth.logout());
 
@@ -137,13 +156,19 @@
   }
 
   async function requestQRFactorization(matrix) {
+    const authHeaders = InterseguroAuth.getAuthHeaders();
+    if (!authHeaders.Authorization) {
+      InterseguroAuth.handleUnauthorized();
+      throw new Error('No hay sesión activa. Inicia sesión nuevamente.');
+    }
+
     const url = `${config.goApiBaseUrl}${config.qrPath}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        ...InterseguroAuth.getAuthHeaders(),
+        ...authHeaders,
       },
       body: JSON.stringify({ matrix }),
     });

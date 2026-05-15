@@ -23,6 +23,7 @@ services:
       JWT_SECRET: "${JWT_SECRET:-interseguro-dev-secret-change-me}"
       AUTH_USERNAME: "${AUTH_USERNAME:-demo}"
       AUTH_PASSWORD: "${AUTH_PASSWORD:-interseguro}"
+      GO_API_URL: http://go-api:8080
     healthcheck:
       test:
         [

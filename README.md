@@ -411,11 +411,79 @@ JWT_SECRET=your-shared-secret
 JWT_EXPIRES_IN=1h
 AUTH_USERNAME=demo
 AUTH_PASSWORD=interseguro
+GO_API_URL=https://your-go-api.onrender.com
 ```
 
-`JWT_SECRET` must be the same value in both APIs so tokens issued by Node are accepted by Go and by the statistics middleware.
+`JWT_SECRET` must be the **exact same value** in both APIs so tokens issued by Node are accepted by Go and by the statistics middleware.
 
 With `docker compose`, defaults are set in `docker-compose.yml` (`demo` / `interseguro` for local development).
+
+---
+
+# Deploy on Render
+
+Render **does not** read `docker-compose.yml`. Each Web Service has its own **Environment** tab in the dashboard (or use the repo `render.yaml` Blueprint).
+
+## Checklist (manual setup — 2 Web Services)
+
+### 1. Shared secret (critical)
+
+Create one secret and paste the **same** value in **both** services:
+
+```text
+JWT_SECRET=<long-random-string>
+```
+
+Example: `openssl rand -hex 32`
+
+If Node and Go use different secrets, login works but QR returns `401 Invalid access token`.
+
+Optional: use a Render **Environment Group** linked to both services so `JWT_SECRET` stays in sync.
+
+### 2. Node API service (`interseguro-node-api`)
+
+| Variable | Example | Notes |
+|----------|---------|--------|
+| `JWT_SECRET` | (same as Go) | Signs login tokens |
+| `AUTH_USERNAME` | `demo` | Login user |
+| `AUTH_PASSWORD` | `your-password` | Login password |
+| `JWT_EXPIRES_IN` | `1h` | Optional |
+| `GO_API_URL` | `https://interseguro-go-api.onrender.com` | Public URL of Go service (no trailing slash) |
+
+Root directory / Docker context: `node-api`.
+
+The UI loads `/config.js`, which injects `GO_API_URL` at runtime (no need to rebuild static files when the Go URL changes).
+
+### 3. Go API service (`interseguro-go-api`)
+
+| Variable | Example | Notes |
+|----------|---------|--------|
+| `JWT_SECRET` | (same as Node) | Validates Bearer tokens |
+| `NODE_API_URL` | `https://interseguro-node-api.onrender.com` | Public URL of Node (statistics + login) |
+| `HTTP_CLIENT_TIMEOUT_SECS` | `30` | Optional |
+
+Root directory / Docker context: `go-api`.
+
+### 4. Verify
+
+```bash
+# Login on Node URL
+curl -s -X POST https://YOUR-NODE.onrender.com/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"demo","password":"YOUR_AUTH_PASSWORD"}'
+
+# QR on Go URL (replace TOKEN)
+curl -X POST https://YOUR-GO.onrender.com/api/v1/qr-factorization \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"matrix":[[1,2],[3,4]]}'
+```
+
+Open `https://YOUR-NODE.onrender.com/login.html` in the browser.
+
+### 5. Blueprint (optional)
+
+Repo file `render.yaml` defines both services, links `NODE_API_URL` / `GO_API_URL`, and an env group with generated `JWT_SECRET`. Deploy via **New → Blueprint** in Render.
 
 ---
 

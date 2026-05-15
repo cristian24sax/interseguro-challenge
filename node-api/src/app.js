@@ -14,6 +14,14 @@ function createApp() {
   app.use(express.json({ limit: '1mb' }));
   app.use(requestLogger);
 
+  // Runtime config for static UI (Render / Cloud Run: set GO_API_URL in env)
+  app.get('/config.js', (req, res) => {
+    const goApiUrl = (process.env.GO_API_URL || '').trim().replace(/\/$/, '');
+    res.setHeader('Cache-Control', 'no-store');
+    res.type('application/javascript');
+    res.send(`window.__INTERSEGURO_CONFIG__=${JSON.stringify({ goApiUrl })};`);
+  });
+
   app.use(
     express.static(publicDir, {
       index: 'index.html',
