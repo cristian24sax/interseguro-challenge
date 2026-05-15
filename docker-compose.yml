@@ -44,6 +44,7 @@ services:
       # Docker DNS: service name resolves to node-api container on the internal network
       NODE_API_URL: http://node-api:3000
       HTTP_CLIENT_TIMEOUT_SECS: "${HTTP_CLIENT_TIMEOUT_SECS:-30}"
+      CORS_ALLOW_ORIGINS: "${CORS_ALLOW_ORIGINS:-http://localhost:3000}"
     depends_on:
       node-api:
         condition: service_healthy

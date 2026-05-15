@@ -37,6 +37,7 @@ ENV NODE_ENV=production \
 COPY --from=deps --chown=app:app /app/node_modules ./node_modules
 COPY --chown=app:app package.json package-lock.json ./
 COPY --chown=app:app src ./src
+COPY --chown=app:app public ./public
 
 USER app
 

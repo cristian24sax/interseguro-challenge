@@ -21,7 +21,7 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
-# Tests and coverage
+# Tests and coverage (keep public/ for UI)
 tests
 coverage
 **/*.test.js
