@@ -14,10 +14,11 @@ const (
 
 // Config holds runtime configuration loaded from the environment.
 type Config struct {
-	Port                 string
-	NodeAPIURL           string
-	NodeStatisticsPath   string
-	HTTPClientTimeout    time.Duration
+	Port               string
+	NodeAPIURL         string
+	NodeStatisticsPath string
+	HTTPClientTimeout  time.Duration
+	JWTSecret          string
 }
 
 // Load reads configuration from environment variables.
@@ -42,10 +43,16 @@ func Load() (*Config, error) {
 		timeout = time.Duration(n) * time.Second
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "interseguro-dev-secret-change-me"
+	}
+
 	return &Config{
 		Port:               port,
 		NodeAPIURL:         nodeURL,
 		NodeStatisticsPath: statsPath,
 		HTTPClientTimeout:  timeout,
+		JWTSecret:          jwtSecret,
 	}, nil
 }

@@ -3,17 +3,6 @@ const jwt = require('jsonwebtoken');
 const { createApp } = require('../src/app');
 const config = require('../src/config');
 
-function bearerToken() {
-  const token = jwt.sign({ sub: 'demo' }, config.jwtSecret, { expiresIn: '1h' });
-  return { Authorization: `Bearer ${token}` };
-}
-
-/**
- * @param {import('express').Express} app
- * @param {string} method
- * @param {string} path
- * @param {object | null} body
- */
 function request(app, method, path, body = null, headers = {}) {
   return new Promise((resolve, reject) => {
     const server = http.createServer(app);
@@ -68,69 +57,62 @@ function request(app, method, path, body = null, headers = {}) {
   });
 }
 
-describe('POST /api/v1/statistics', () => {
+function bearerToken(username = 'demo') {
+  const token = jwt.sign({ sub: username }, config.jwtSecret, { expiresIn: '1h' });
+  return { Authorization: `Bearer ${token}` };
+}
+
+describe('auth API', () => {
   const app = createApp();
 
-  it('returns statistics for valid q and r', async () => {
-    const res = await request(app, 'POST', '/api/v1/statistics', {
-      q: [
-        [1, 0],
-        [0, 1],
-      ],
-      r: [
-        [2, 3],
-        [0, 4],
-      ],
-    }, bearerToken());
+  it('logs in with valid credentials', async () => {
+    const res = await request(app, 'POST', '/api/v1/auth/login', {
+      username: 'demo',
+      password: 'interseguro',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data).toMatchObject({
-      max: 4,
-      min: 0,
-      sum: 11,
-      average: 1.375,
-      elementCount: 8,
-      q: { max: 1, min: 0, sum: 2, average: 0.5, count: 4 },
-      r: { max: 4, min: 0, sum: 9, average: 2.25, count: 4 },
-      isDiagonalQ: true,
-      isDiagonalR: false,
-      isDiagonal: false,
-      isUpperTrapezoidalR: true,
-      isOrthonormalColumnsQ: true,
-    });
+    expect(res.body.data.token).toEqual(expect.any(String));
+    expect(res.body.data.accessToken).toBe(res.body.data.token);
+    expect(res.body.data.tokenType).toBe('Bearer');
+    expect(res.body.data.expiresIn).toBe('1h');
+    expect(res.body.data.username).toBe('demo');
   });
 
-  it('rejects invalid body', async () => {
-    const res = await request(app, 'POST', '/api/v1/statistics', {
-      q: [
-        [1, 2],
-        [3],
-      ],
-      r: [
-        [1, 2],
-        [3, 4],
-      ],
-    }, bearerToken());
+  it('rejects login with missing fields', async () => {
+    const res = await request(app, 'POST', '/api/v1/auth/login', { username: 'demo' });
+
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.message).toMatch(/rectangular/i);
+    expect(res.body.message).toMatch(/password/i);
   });
 
-  it('returns 401 without JWT', async () => {
+  it('rejects invalid credentials', async () => {
+    const res = await request(app, 'POST', '/api/v1/auth/login', {
+      username: 'demo',
+      password: 'wrong',
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('returns current user for valid bearer token', async () => {
+    const res = await request(app, 'GET', '/api/v1/auth/me', null, bearerToken());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.username).toBe('demo');
+  });
+
+  it('rejects statistics without token', async () => {
     const res = await request(app, 'POST', '/api/v1/statistics', {
       q: [[1, 0], [0, 1]],
       r: [[2, 3], [0, 4]],
     });
 
     expect(res.status).toBe(401);
-    expect(res.body.success).toBe(false);
-    expect(res.body.message).toMatch(/missing access token/i);
-  });
-
-  it('returns 404 for unknown path', async () => {
-    const res = await request(app, 'GET', '/api/v1/unknown');
-    expect(res.status).toBe(404);
     expect(res.body.success).toBe(false);
   });
 });

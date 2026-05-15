@@ -1,8 +1,12 @@
 # Local orchestration: Go API (orchestrator) -> Node API (statistics).
 # Usage:
 #   docker compose up --build
+#   TOKEN=$(curl -s -X POST http://localhost:3000/api/v1/auth/login \
+#     -H "Content-Type: application/json" \
+#     -d '{"username":"demo","password":"interseguro"}' | jq -r '.data.accessToken')
 #   curl -X POST http://localhost:8080/api/v1/qr-factorization \
 #     -H "Content-Type: application/json" \
+#     -H "Authorization: Bearer $TOKEN" \
 #     -d '{"matrix":[[1,2],[3,4]]}'
 
 services:
@@ -16,6 +20,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      JWT_SECRET: "${JWT_SECRET:-interseguro-dev-secret-change-me}"
+      AUTH_USERNAME: "${AUTH_USERNAME:-demo}"
+      AUTH_PASSWORD: "${AUTH_PASSWORD:-interseguro}"
     healthcheck:
       test:
         [
@@ -41,6 +48,7 @@ services:
       - "${GO_API_HOST_PORT:-8080}:8080"
     environment:
       PORT: "8080"
+      JWT_SECRET: "${JWT_SECRET:-interseguro-dev-secret-change-me}"
       # Docker DNS: service name resolves to node-api container on the internal network
       NODE_API_URL: http://node-api:3000
       HTTP_CLIENT_TIMEOUT_SECS: "${HTTP_CLIENT_TIMEOUT_SECS:-30}"

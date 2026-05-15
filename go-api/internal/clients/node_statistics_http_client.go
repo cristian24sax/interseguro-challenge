@@ -72,6 +72,9 @@ func (c *NodeStatisticsHTTPClient) Compute(ctx context.Context, q, r [][]float64
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	if token := BearerTokenFromContext(ctx); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {

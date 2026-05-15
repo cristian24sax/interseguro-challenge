@@ -1,12 +1,13 @@
 (function () {
+  if (!InterseguroAuth.requireAuth()) return;
+
   const SAMPLE = '1, 2\n3, 4';
 
   const config = (function resolveConfig() {
     const meta = document.querySelector('meta[name="go-api-url"]');
     const fromMeta = meta?.getAttribute('content')?.trim();
     const fromQuery = new URLSearchParams(window.location.search).get('api');
-    console.log(fromQuery, fromMeta);
-    const baseUrl = (fromQuery || fromMeta).replace(/\/$/, '');
+    const baseUrl = (fromQuery || fromMeta || 'http://localhost:8080').replace(/\/$/, '');
     return {
       goApiBaseUrl: baseUrl,
       qrPath: '/api/v1/qr-factorization',
@@ -25,9 +26,13 @@
     matrixR: document.getElementById('matrix-r'),
     statistics: document.getElementById('statistics'),
     apiUrlLabel: document.getElementById('api-url-label'),
+    userLabel: document.getElementById('user-label'),
+    btnLogout: document.getElementById('btn-logout'),
   };
 
   els.apiUrlLabel.textContent = config.goApiBaseUrl;
+  els.userLabel.textContent = InterseguroAuth.getUsername() || 'Usuario';
+  els.btnLogout.addEventListener('click', () => InterseguroAuth.logout());
 
   els.btnSample.addEventListener('click', () => {
     els.matrixInput.value = SAMPLE;
@@ -135,7 +140,11 @@
     const url = `${config.goApiBaseUrl}${config.qrPath}`;
     const response = await fetch(url, {
       method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...InterseguroAuth.getAuthHeaders(),
+      },
       body: JSON.stringify({ matrix }),
     });
 
@@ -144,6 +153,11 @@
       body = await response.json();
     } catch {
       throw new Error('Respuesta inválida del servidor');
+    }
+
+    if (response.status === 401) {
+      InterseguroAuth.handleUnauthorized();
+      throw new Error('Sesión expirada. Inicia sesión nuevamente.');
     }
 
     if (!response.ok || !body.success) {

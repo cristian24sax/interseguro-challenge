@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interseguro · Iniciar sesión</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-page">
+    <div class="page auth-layout">
+      <section class="card auth-card" aria-labelledby="login-heading">
+        <header class="auth-header">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1 id="login-heading">Iniciar sesión</h1>
+            <p class="subtitle">Accede con tu cuenta para usar la factorización QR</p>
+          </div>
+        </header>
+
+        <form id="login-form" class="auth-form" novalidate>
+          <label class="field">
+            <span class="field-label">Usuario</span>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              required
+              placeholder="demo"
+            />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Contraseña</span>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              placeholder="••••••••"
+            />
+          </label>
+
+          <p id="login-error" class="message message-error" hidden role="alert"></p>
+
+          <button type="submit" id="btn-login" class="btn btn-primary btn-block">
+            Entrar
+          </button>
+        </form>
+
+        <p class="hint auth-hint">
+          Credenciales de demostración: usuario <code>demo</code>, contraseña
+          <code>interseguro</code>
+        </p>
+      </section>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="login.js"></script>
+  </body>
+</html>
