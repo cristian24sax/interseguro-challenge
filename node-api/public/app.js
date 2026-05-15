@@ -155,8 +155,63 @@
   function renderResults(data) {
     els.matrixQ.innerHTML = renderMatrixTable(data.q || []);
     els.matrixR.innerHTML = renderMatrixTable(data.r || []);
-    els.statistics.textContent = JSON.stringify(data.statistics || {}, null, 2);
+    els.statistics.innerHTML = renderStatistics(data.statistics || {});
     els.results.hidden = false;
+  }
+
+  function renderStatistics(stats) {
+    const items = [
+      {
+        label: 'Valor máximo',
+        hint: 'El valor máximo encontrado en las matrices.',
+        value: formatStatNumber(stats.max),
+      },
+      {
+        label: 'Valor mínimo',
+        hint: 'El valor mínimo encontrado en las matrices.',
+        value: formatStatNumber(stats.min),
+      },
+      {
+        label: 'Promedio',
+        hint: 'El promedio de todos los valores de las matrices.',
+        value: formatStatNumber(stats.average),
+      },
+      {
+        label: 'Suma total',
+        hint: 'La suma total de todos los valores de las matrices.',
+        value: formatStatNumber(stats.sum),
+      },
+      {
+        label: 'Matriz diagonal',
+        hint: 'Verificar si alguna matriz es diagonal.',
+        value: formatBoolean(stats.isDiagonal),
+      },
+    ];
+
+    return items
+      .map(
+        (item) =>
+          `<dt title="${escapeAttr(item.hint)}">${item.label}</dt>` +
+          `<dd>${item.value}</dd>`
+      )
+      .join('');
+  }
+
+  function formatStatNumber(value) {
+    if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+    return formatNumber(value);
+  }
+
+  function formatBoolean(value) {
+    if (value === null || value === undefined) return '—';
+    return value ? 'Sí' : 'No';
+  }
+
+  function escapeAttr(text) {
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;');
   }
 
   function renderMatrixTable(matrix) {
