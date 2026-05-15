@@ -1,0 +1,203 @@
+(function () {
+  const SAMPLE = '1, 2\n3, 4';
+
+  const config = (function resolveConfig() {
+    const meta = document.querySelector('meta[name="go-api-url"]');
+    const fromMeta = meta?.getAttribute('content')?.trim();
+    const fromQuery = new URLSearchParams(window.location.search).get('api');
+    const baseUrl = (fromQuery || fromMeta || 'http://localhost:8080').replace(/\/$/, '');
+    return {
+      goApiBaseUrl: baseUrl,
+      qrPath: '/api/v1/qr-factorization',
+    };
+  })();
+
+  const els = {
+    matrixInput: document.getElementById('matrix-input'),
+    btnSubmit: document.getElementById('btn-submit'),
+    btnSample: document.getElementById('btn-sample'),
+    btnClear: document.getElementById('btn-clear'),
+    clientError: document.getElementById('client-error'),
+    status: document.getElementById('status'),
+    results: document.getElementById('results'),
+    matrixQ: document.getElementById('matrix-q'),
+    matrixR: document.getElementById('matrix-r'),
+    statistics: document.getElementById('statistics'),
+    apiUrlLabel: document.getElementById('api-url-label'),
+  };
+
+  els.apiUrlLabel.textContent = config.goApiBaseUrl;
+
+  els.btnSample.addEventListener('click', () => {
+    els.matrixInput.value = SAMPLE;
+    hideClientError();
+  });
+
+  els.btnClear.addEventListener('click', () => {
+    els.matrixInput.value = '';
+    hideClientError();
+    hideResults();
+    setStatus('Listo.', '');
+  });
+
+  els.btnSubmit.addEventListener('click', onSubmit);
+
+  async function onSubmit() {
+    hideClientError();
+    hideResults();
+
+    let matrix;
+    try {
+      matrix = parseMatrix(els.matrixInput.value);
+    } catch (err) {
+      showClientError(err.message);
+      return;
+    }
+
+    setLoading(true);
+    setStatus('Calculando factorización QR…', 'loading');
+
+    try {
+      const data = await requestQRFactorization(matrix);
+      renderResults(data);
+      setStatus('Operación completada.', 'success');
+    } catch (err) {
+      setStatus(err.message || 'Error al procesar la solicitud.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function parseMatrix(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) throw new Error('La matriz no puede estar vacía');
+    if (trimmed.startsWith('[')) return parseJsonMatrix(trimmed);
+    return parseLineMatrix(trimmed);
+  }
+
+  function parseJsonMatrix(text) {
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error('JSON inválido. Usa el formato [[1,2],[3,4]]');
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('La matriz debe ser un arreglo no vacío');
+    }
+    const matrix = parsed.map((row, i) => {
+      if (!Array.isArray(row) || row.length === 0) throw new Error(`Fila ${i + 1} inválida`);
+      return row.map((cell, j) => toNumber(cell, i, j));
+    });
+    assertRectangular(matrix);
+    return matrix;
+  }
+
+  function parseLineMatrix(text) {
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) throw new Error('Ingresa al menos una fila');
+    const matrix = lines.map((line, i) => {
+      const parts = line.split(/[\s,;]+/).filter(Boolean);
+      if (parts.length === 0) throw new Error(`Fila ${i + 1} vacía`);
+      return parts.map((p, j) => toNumber(p, i, j));
+    });
+    assertRectangular(matrix);
+    return matrix;
+  }
+
+  function toNumber(value, row, col) {
+    if (value === null || value === undefined || value === '') {
+      throw new Error(`Valor nulo en fila ${row + 1}, columna ${col + 1}`);
+    }
+    const n = Number(value);
+    if (!Number.isFinite(n)) {
+      throw new Error(`Número inválido en fila ${row + 1}, columna ${col + 1}`);
+    }
+    return n;
+  }
+
+  function assertRectangular(matrix) {
+    const cols = matrix[0].length;
+    for (let i = 1; i < matrix.length; i += 1) {
+      if (matrix[i].length !== cols) {
+        throw new Error('La matriz debe ser rectangular (mismas columnas en cada fila)');
+      }
+    }
+  }
+
+  function formatNumber(n) {
+    if (Number.isInteger(n)) return String(n);
+    return n.toFixed(6).replace(/\.?0+$/, '');
+  }
+
+  async function requestQRFactorization(matrix) {
+    const url = `${config.goApiBaseUrl}${config.qrPath}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matrix }),
+    });
+
+    let body;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Respuesta inválida del servidor');
+    }
+
+    if (!response.ok || !body.success) {
+      throw new Error(body.message || `Error HTTP ${response.status}`);
+    }
+
+    return body.data;
+  }
+
+  function renderResults(data) {
+    els.matrixQ.innerHTML = renderMatrixTable(data.q || []);
+    els.matrixR.innerHTML = renderMatrixTable(data.r || []);
+    els.statistics.textContent = JSON.stringify(data.statistics || {}, null, 2);
+    els.results.hidden = false;
+  }
+
+  function renderMatrixTable(matrix) {
+    if (!matrix.length) return '<p class="hint">Sin datos</p>';
+    const cols = matrix[0].length;
+    let html = '<table><thead><tr>';
+    for (let c = 0; c < cols; c += 1) html += `<th>c${c + 1}</th>`;
+    html += '</tr></thead><tbody>';
+    matrix.forEach((row) => {
+      html += '<tr>';
+      row.forEach((cell) => {
+        html += `<td>${formatNumber(cell)}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function setLoading(loading) {
+    els.btnSubmit.disabled = loading;
+    els.btnSample.disabled = loading;
+    els.btnClear.disabled = loading;
+  }
+
+  function setStatus(text, variant) {
+    els.status.textContent = text;
+    els.status.className = variant ? `status ${variant}` : 'status';
+  }
+
+  function showClientError(message) {
+    els.clientError.textContent = message;
+    els.clientError.hidden = false;
+  }
+
+  function hideClientError() {
+    els.clientError.hidden = true;
+    els.clientError.textContent = '';
+  }
+
+  function hideResults() {
+    els.results.hidden = true;
+  }
+})();

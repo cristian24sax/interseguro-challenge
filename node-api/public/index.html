@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="go-api-url" content="http://localhost:8080" />
+    <title>Interseguro · QR Factorization</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1>QR Factorization</h1>
+            <p class="subtitle">Matriz rectangular → factorización QR y estadísticas</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="card panel-input" aria-labelledby="input-heading">
+          <h2 id="input-heading">Matriz de entrada</h2>
+          <p class="hint">
+            Filas separadas por salto de línea; valores por coma o espacio.
+            También JSON: <code>[[1,2],[3,4]]</code>
+          </p>
+
+          <label class="field">
+            <span class="field-label">Matriz</span>
+            <textarea
+              id="matrix-input"
+              rows="8"
+              spellcheck="false"
+              placeholder="1, 2&#10;3, 4"
+            ></textarea>
+          </label>
+
+          <div class="actions">
+            <button type="button" id="btn-sample" class="btn btn-ghost">Ejemplo</button>
+            <button type="button" id="btn-clear" class="btn btn-ghost">Limpiar</button>
+            <button type="button" id="btn-submit" class="btn btn-primary">
+              Calcular QR
+            </button>
+          </div>
+
+          <p id="client-error" class="message message-error" hidden role="alert"></p>
+        </section>
+
+        <section class="card panel-output" aria-labelledby="output-heading">
+          <h2 id="output-heading">Resultado</h2>
+          <p id="status" class="status" aria-live="polite">Listo.</p>
+
+          <div id="results" class="results" hidden>
+            <article class="result-block">
+              <h3>Matriz Q</h3>
+              <div id="matrix-q" class="matrix-table"></div>
+            </article>
+
+            <article class="result-block">
+              <h3>Matriz R</h3>
+              <div id="matrix-r" class="matrix-table"></div>
+            </article>
+
+            <article class="result-block result-block-wide">
+              <h3>Estadísticas</h3>
+              <pre id="statistics" class="statistics-json"></pre>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          API Go:
+          <code id="api-url-label">http://localhost:8080</code>
+          · <code>POST /api/v1/qr-factorization</code>
+        </p>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
