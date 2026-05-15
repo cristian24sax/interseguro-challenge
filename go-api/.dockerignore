@@ -1,0 +1,36 @@
+# VCS and IDE
+.git
+.gitignore
+.gitattributes
+.github
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Docs and local tooling
+*.md
+.env
+.env.*
+!.env.example
+
+# Tests and coverage (not needed in image)
+tests/
+**/*_test.go
+coverage.out
+coverage.html
+
+# Binaries / artifacts
+server
+*.exe
+dist/
+bin/
+
+# Docker (avoid recursive context)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Empty placeholder dirs
+cmd/.gitkeep

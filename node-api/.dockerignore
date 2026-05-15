@@ -1,0 +1,39 @@
+# Dependencies (reinstalled in image)
+node_modules
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# VCS and IDE
+.git
+.gitignore
+.gitattributes
+.github
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Docs and secrets
+*.md
+.env
+.env.*
+!.env.example
+
+# Tests and coverage
+tests
+coverage
+**/*.test.js
+**/*.spec.js
+jest.config.js
+
+# Artifacts
+dist
+build
+*.log
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore

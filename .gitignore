@@ -1,0 +1,102 @@
+# =========================
+# GENERAL
+# =========================
+.DS_Store
+Thumbs.db
+.cursor/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# =========================
+# GO
+# =========================
+
+# Binarios
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build folders
+bin/
+dist/
+build/
+
+# Coverage
+coverage.out
+*.coverprofile
+
+# Vendor (opcional)
+# vendor/
+
+# Go workspace
+go.work.sum
+
+# =========================
+# NODE / EXPRESS
+# =========================
+
+node_modules/
+npm-cache/
+
+# Next / React / Vite (si tienes frontend)
+.next/
+out/
+.vite/
+dist/
+
+# Typescript
+*.tsbuildinfo
+
+# =========================
+# DOCKER
+# =========================
+
+docker-data/
+*.pid
+
+# =========================
+# IDEs
+# =========================
+
+.vscode/
+.idea/
+
+# =========================
+# OS TEMP
+# =========================
+
+tmp/
+temp/
+.cache/
+
+# =========================
+# TESTS
+# =========================
+
+coverage/
+htmlcov/
+
+# =========================
+# MONOREPO SPECIFIC
+# =========================
+
+# Si tienes apps/packages:
+apps/**/node_modules/
+packages/**/node_modules/
+
+# Binarios generados en servicios Go
+services/**/bin/

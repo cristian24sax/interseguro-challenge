@@ -1,0 +1,56 @@
+# Local orchestration: Go API (orchestrator) -> Node API (statistics).
+# Usage:
+#   docker compose up --build
+#   curl -X POST http://localhost:8080/api/v1/qr-factorization \
+#     -H "Content-Type: application/json" \
+#     -d '{"matrix":[[1,2],[3,4]]}'
+
+services:
+  node-api:
+    build:
+      context: ./node-api
+      dockerfile: Dockerfile
+    container_name: interseguro-node-api
+    ports:
+      - "${NODE_API_HOST_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('net').createConnection(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - interseguro
+
+  go-api:
+    build:
+      context: ./go-api
+      dockerfile: Dockerfile
+    container_name: interseguro-go-api
+    ports:
+      - "${GO_API_HOST_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      # Docker DNS: service name resolves to node-api container on the internal network
+      NODE_API_URL: http://node-api:3000
+      HTTP_CLIENT_TIMEOUT_SECS: "${HTTP_CLIENT_TIMEOUT_SECS:-30}"
+    depends_on:
+      node-api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - interseguro
+
+networks:
+  interseguro:
+    driver: bridge
