@@ -5,7 +5,8 @@
     const meta = document.querySelector('meta[name="go-api-url"]');
     const fromMeta = meta?.getAttribute('content')?.trim();
     const fromQuery = new URLSearchParams(window.location.search).get('api');
-    const baseUrl = (fromQuery || fromMeta || 'http://localhost:8080').replace(/\/$/, '');
+    console.log(fromQuery, fromMeta);
+    const baseUrl = (fromQuery || fromMeta).replace(/\/$/, '');
     return {
       goApiBaseUrl: baseUrl,
       qrPath: '/api/v1/qr-factorization',
